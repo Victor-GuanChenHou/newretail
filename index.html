@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選擇下載檔案</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .loading {
+            display: none;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <h1>王座青田明細下載</h1>
+
+    <!-- 儲存位置選擇 -->
+    <button onclick="downloadFile()">下載檔案</button>
+    <div class="loading" id="loading">處理中...</div>
+
+    <script>
+        function downloadFile() {
+            document.getElementById("loading").style.display = "block"; // 顯示loading效果
+            
+            // 發送 GET 請求給後端生成檔案
+            fetch('/generate')
+                .then(response => response.blob())  // 以二進位的方式獲取檔案
+                .then(blob => {
+                    document.getElementById("loading").style.display = "none"; // 隱藏loading效果
+                    
+                    // 創建下載鏈接並觸發下載
+                    const link = document.createElement('a');
+                    const url = window.URL.createObjectURL(blob);
+                    link.href = url;
+                    link.download = '王座青田明細.xlsx';  // 設置下載檔案的名稱
+                    link.click();
+                    window.URL.revokeObjectURL(url); // 釋放 URL
+                })
+                .catch(error => {
+                    document.getElementById("loading").style.display = "none"; // 隱藏loading效果
+                    alert("發生錯誤：" + error);
+                });
+        }
+    </script>
+</body>
+</html>
