@@ -164,18 +164,13 @@ def outputexcel():
             ws.cell(row=r_idx + 2, column=c_idx + 18, value=value)
 
     # 儲存 Excel 文件
-    filepath='./'
+    
 
     # 要儲存的檔案名稱
     filename = "王座青田明細.xlsx"
-    full_path = os.path.join(filepath, filename)
+    full_path = os.path.join(filename)
 
-        # 檢查檔案是否存在，如果存在則新增編號
-    counter = 1
-    while os.path.exists(full_path):
-        filename = f"王座青田明細({counter}).xlsx"
-        full_path = os.path.join(filepath, filename)
-        counter += 1
+    
     wb.save(full_path)
 
     # output_file = "test.xlsx"
@@ -183,6 +178,117 @@ def outputexcel():
 
     # 關閉連線
     conn.close()
+    message=full_path
+    return message
+def fullday(path):
+    import pyodbc
+    import pandas as pd
+    from openpyxl import Workbook
+    import pandas as pd
+    from datetime import datetime
+    from openpyxl.styles import PatternFill
+    import os
+    from openpyxl import Workbook
+    
+    # 讀取進價.xlsx文件
+    file_path = '進價.xlsx'  # 請根據實際文件位置修改
+
+    # 使用pandas的read_excel函數讀取Excel文件
+    inputdata = pd.read_excel(file_path, engine='openpyxl')
+    df=pd.read_excel(path, engine='openpyxl')
+    data={}
+    shelflifeday=[]
+    day_1=[]
+    day_2=[]
+    day_3=[]
+    day_4=[]
+    shelflifeday_2=[]
+    end=[]
+    data['品號']=df['商品編號']
+    data['品名']=df['商品名稱']
+
+    for z in range(len(data['品號'])):
+        filtered_df = inputdata[inputdata['品號'] == data['品號'][z]]
+        if filtered_df.empty:
+            shelflifeday.append(0)
+        else:
+            shelflifeday.append(filtered_df['保存期限\n(天)'].iloc[0])
+    data['保存期限天數']=shelflifeday
+    data['允收期限2/3'] = [2/3] * len(df['商品名稱'])
+    data['允收期限1/2'] = [1/2] * len(df['商品名稱'])
+    for z in range(len(data['品號'])):
+        if data['保存期限天數'][z] != 0:
+            day_1.append(int(data['保存期限天數'][z])*2/3)
+            day_2.append(int(data['保存期限天數'][z])*1/2)
+        else:
+            day_1.append(0)
+            day_2.append(0)
+        str=df['有效日期'][z]
+        
+        shelflifeday_2.append(str)
+        target_date = datetime.strptime(str, '%Y/%m/%d')
+        end.append( (target_date - datetime.today()).days)
+    
+    data['計算天數2/3']=day_1
+    data['計算天數1/2']=day_2
+    data['可用數量']=df['庫存數量']
+    data['有效日期']=shelflifeday_2
+    data['結果']=end
+    for z in range(len(data['品號'])):
+        if data['計算天數2/3'][z]==0:
+            day_3.append(None)
+            day_4.append(None)
+        else:
+            day_3.append(int(data['結果'][z]-data['計算天數2/3'][z]))
+            day_4.append(int(data['結果'][z]-data['計算天數1/2'][z]))
+    data['1/3允收餘天數']=day_3
+    data['1/2允收餘天數']=day_4
+    data=pd.DataFrame(data)
+    data.columns=['品號','品名','保存期限天數','允收期限2/3','允收期限1/2','計算天數2/3','計算天數1/2','可用數量','有效日期','結果','1/3允收餘天數','1/2允收餘天數']
+
+    # 根據 "品號" 進行分組，並對 "可用數量" 求和
+    
+    # 重新設置索引，將總和欄位插入最後
+
+    # 創建 Excel 工作簿
+    wb = Workbook()
+
+    # 添加工作表
+    ws = wb.active
+    ws.title = "王座全日明細"
+    header_fill = PatternFill(start_color="9999FF", end_color="9999FF", fill_type="solid")
+
+    # 在 A 到 K 欄顯示 df 的欄位名稱和數據
+    for col_idx, col_name in enumerate(df.columns, start=1):
+        cell=ws.cell(row=1, column=col_idx, value=col_name)  # 放置欄位名稱
+        cell.fill = header_fill  
+    # 將 df 輸出到 A 到 K 欄
+    for r_idx, row in df.iterrows():
+        for c_idx, value in enumerate(row):
+            ws.cell(row=r_idx + 2, column=c_idx + 1, value=value)
+    
+    #############################
+    for col_idx, col_name in enumerate(data.columns, start=21):  
+        cell=ws.cell(row=1, column=col_idx, value=col_name)  # 放置欄位名稱
+        cell.fill = header_fill  
+    for r_idx, row in data.iterrows():
+        for c_idx, value in enumerate(row):
+            ws.cell(row=r_idx + 2, column=c_idx + 21, value=value)
+
+    # 儲存 Excel 文件
+    
+
+    # 要儲存的檔案名稱
+    filename = "王座全日明細.xlsx"
+    full_path = os.path.join(filename)
+
+    
+    wb.save(full_path)
+
+    # output_file = "test.xlsx"
+    # df.to_excel(output_file, index=False, engine='openpyxl')
+
+    # 關閉連線
     
     message=full_path
     return message
