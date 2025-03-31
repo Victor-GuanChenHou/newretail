@@ -672,13 +672,25 @@ def ALL(path):
                 
                 date=datetime.strptime(changl_day['有效日期'][p], '%Y/%m/%d')
                 date_str = date.strftime('%Y%m') 
+                
                 if int(mm)>=int(date_str) and int(start_month_str)<=int(date_str):
-                    result.loc[z,date_str ] = changl_day.loc[p, '可用數量']
+                    if pd.isna(result[date_str][z]):
+                        m_data=0
+                    else:
+                        m_data=result[date_str][z]
+                    result.loc[z,date_str ] = changl_day.loc[p, '可用數量']+m_data
                 elif int(mm)<int(date_str):
-                    result.loc[z,'超過18個月' ] = changl_day.loc[p, '可用數量']
+                    if pd.isna(result['超過18個月'][z]):
+                        m_data=0
+                    else:
+                        m_data=result['超過18個月'][z]
+                    result.loc[z,'超過18個月' ] = changl_day.loc[p, '可用數量']+m_data
                 else :
-                   
-                    result.loc[z,'已過期' ] = changl_day.loc[p, '可用數量']
+                    if pd.isna(result['已過期'][z]):
+                        m_data=0
+                    else:
+                        m_data=result['已過期'][z]
+                    result.loc[z,'已過期' ] = changl_day.loc[p, '可用數量']+m_data
     for z in range(len(result['品號'])):
         for p in range(len(changl_o['商品編號'])):
             if result['品號'][z] == changl_o['商品編號'][p]:
@@ -708,7 +720,8 @@ def ALL(path):
                 result.loc[z,'成本']=inputdata['成本'][t]   
                 result.loc[z,'總成本(未稅)']=inputdata['成本'][t]*result['總計'][z]
         for j in range(len(cingting_o)):
-            result.loc[z, '規格'] = cingting_o.loc[p, '規格']
+            if result['品號'][z]==cingting_o['品號'][j]:
+                result.loc[z, '規格'] = cingting_o[ '規格'][j]
     start_month = datetime.today().replace(day=1)
     months = [(start_month + pd.DateOffset(months=i)).strftime('%Y%m') for i in range(18)]
     new_row = {
