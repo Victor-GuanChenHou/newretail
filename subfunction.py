@@ -739,9 +739,86 @@ def ALL(path):
     result = pd.concat([result, new_row_df], ignore_index=True)    
     #匯總數據
     changl_result=result
+    col=['品號','品名','總計']
+    pinghao_a = pd.DataFrame(columns=col)
+    pinghao_b = pd.DataFrame(columns=col)
+    for i in range(len(cingting_result['品號'])):
+        
+        if pd.isna(cingting_result['品號'][i]):
+            pass
+        else:
+            if cingting_result['品號'][i].startswith(("CP", "KO")):
+                pinghao_b.loc[i] = [
+                    cingting_result['品號'][i],
+                    cingting_result['青田品名'][i],
+                    cingting_result['總計'][i]
+                ]
+            else:
+                pinghao_a.loc[i] = [
+                    cingting_result['品號'][i],
+                    cingting_result['青田品名'][i],
+                    cingting_result['總計'][i]
+                ]
+    pinghao_a.reset_index(drop=True, inplace=True)
+    pinghao_b.reset_index(drop=True, inplace=True)
+    pinghao_c = pd.DataFrame(columns=col)
+    pinghao_d = pd.DataFrame(columns=col)
+    for i in range(len(changl_result['品號'])):
+        
+        if pd.isna(changl_result['品號'][i]):
+            pass
+        else:
+            if changl_result['品號'][i].startswith(("CP", "KO")):
+                pinghao_d.loc[i] = [
+                    changl_result['品號'][i],
+                    changl_result['全日品名'][i],
+                    changl_result['總計'][i]
+                ]
+                
+            else:
+                
+                pinghao_c.loc[i] = [
+                    changl_result['品號'][i],
+                    changl_result['全日品名'][i],
+                    changl_result['總計'][i]
+                ]
+    pinghao_c.reset_index(drop=True, inplace=True)
+    pinghao_d.reset_index(drop=True, inplace=True)
+    
+    for index, row in pinghao_c.iterrows():
+        品號_value = row['品號']
+        品名_value = row['品名']
+        總計_value = row['總計']
+            
+            # 判斷是否已存在
+        if 品號_value in pinghao_a['品號'].values:
+                # 更新總計
+            pinghao_a.loc[pinghao_a['品號'] == 品號_value, '總計'] += 總計_value
+        else:
+            # 不存在則新增
+            pinghao_a = pd.concat([pinghao_a, pd.DataFrame({"品號": [品號_value],"品名": [品名_value], "總計": [總計_value]})], ignore_index=True)
+    for index, row in pinghao_d.iterrows():
+        品號_value = row['品號']
+        品名_value = row['品名']
+        總計_value = row['總計']
+            
+            # 判斷是否已存在
+        if 品號_value in pinghao_b['品號'].values:
+                # 更新總計
+            
+            pinghao_b.loc[pinghao_b['品號'] == 品號_value, '總計'] += 總計_value
+        else:
+                # 不存在則新增
+            
+            pinghao_b = pd.concat([pinghao_b, pd.DataFrame({"品號": [品號_value],"品名": [品名_value], "總計": [總計_value]})], ignore_index=True)
 
+                    
+    print(pinghao_a)        
+    print(pinghao_b)
     length=len(cingting_day['品號'])+3  
     length_2=len(cingting_result['品號'])+3  
+    length_3=len(pinghao_a)+3  
+    print(length)
     ###############最上總和資料######################
     todaystr=datetime.today().strftime('%Y%m%d')
     alldata={
@@ -788,7 +865,19 @@ def ALL(path):
     for r_idx, row in changl_day.iterrows():
         for c_idx, value in enumerate(row):
             ws.cell(row=r_idx + length+1, column=c_idx + 29, value=value)
-    
+    for col_idx, col_name in enumerate(pinghao_a.columns, start=45):  
+        cell=ws.cell(row=1, column=col_idx, value=col_name)  # 放置欄位名稱
+        cell.fill = header_fill  
+    for r_idx, row in pinghao_a.iterrows():
+        for c_idx, value in enumerate(row):
+            ws.cell(row=r_idx +2, column=c_idx + 45, value=value)
+
+    for col_idx, col_name in enumerate(pinghao_b.columns, start=45):  
+        cell=ws.cell(row=length_3, column=col_idx, value=col_name)  # 放置欄位名稱
+        cell.fill = header_fill  
+    for r_idx, row in pinghao_b.iterrows():
+        for c_idx, value in enumerate(row):
+            ws.cell(row=r_idx+length_3 +1, column=c_idx + 45, value=value)
     
 
     
