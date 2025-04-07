@@ -587,12 +587,21 @@ def ALL(path):
                 date=datetime.strptime(cingting_day['有效日期'][p], '%Y/%m/%d')
                 date_str = date.strftime('%Y%m') 
                 if int(mm)>=int(date_str) and int(start_month_str)<=int(date_str):
-                    result.loc[z,date_str ] = cingting_day.loc[p, '可用數量']
+                    if pd.isna(result[date_str][z]):
+                        result.loc[z,date_str ] = cingting_day.loc[p, '可用數量']
+                    else:
+                        result.loc[z,date_str] = cingting_day.loc[p, '可用數量']+result[date_str][z]
                 elif int(mm)<int(date_str):
-                    result.loc[z,'超過18個月' ] = cingting_day.loc[p, '可用數量']
+                    if pd.isna(result['超過18個月'][z]):
+                        result.loc[z,'超過18個月' ] = cingting_day.loc[p, '可用數量']
+                    else:
+                        result.loc[z,'超過18個月' ] = cingting_day.loc[p, '可用數量']+result['超過18個月'][z]
                 else :
-                   
-                    result.loc[z,'已過期' ] = cingting_day.loc[p, '可用數量']
+                    if pd.isna(result['已過期'][z]):
+                        result.loc[z,'已過期' ] = cingting_day.loc[p, '可用數量']
+                    else:
+                        result.loc[z,'已過期' ] = cingting_day.loc[p, '可用數量']+result['已過期'][z]
+
     for z in range(len(result['品號'])):
         for p in range(len(cingting_o['品號'])):
             if result['品號'][z] == cingting_o['品號'][p]:
@@ -759,6 +768,7 @@ def ALL(path):
                     cingting_result['青田品名'][i],
                     cingting_result['總計'][i]
                 ]
+                
     pinghao_a.reset_index(drop=True, inplace=True)
     pinghao_b.reset_index(drop=True, inplace=True)
     pinghao_c = pd.DataFrame(columns=col)
