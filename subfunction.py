@@ -812,13 +812,27 @@ def ALL(path):
             
             pinghao_b = pd.concat([pinghao_b, pd.DataFrame({"品號": [品號_value],"品名": [品名_value], "總計": [總計_value]})], ignore_index=True)
 
-                    
-    print(pinghao_a)        
-    print(pinghao_b)
+    new_row = {
+            '品號': None, 
+            '品名': '總計', 
+            '總計':pinghao_a['總計'].sum()
+            
+        }
+    pinghao_a_df = pd.DataFrame([new_row])
+    pinghao_a = pd.concat([pinghao_a, pinghao_a_df], ignore_index=True)                   
+    
+    new_row = {
+            '品號': None, 
+            '品名': '總計', 
+            '總計':pinghao_b['總計'].sum()
+            
+        }
+    pinghao_b_df = pd.DataFrame([new_row])
+    pinghao_b = pd.concat([pinghao_b, pinghao_b_df], ignore_index=True)   
     length=len(cingting_day['品號'])+3  
     length_2=len(cingting_result['品號'])+3  
     length_3=len(pinghao_a)+3  
-    print(length)
+    
     ###############最上總和資料######################
     todaystr=datetime.today().strftime('%Y%m%d')
     alldata={
@@ -842,17 +856,28 @@ def ALL(path):
     ws.merge_cells('A1:C2')
     for col_idx, col_name in enumerate(cingting_result.columns, start=1):
         cell=ws.cell(row=6, column=col_idx, value=col_name)  # 放置欄位名稱
-        cell.fill = header_fill  
+        column_fill = PatternFill(start_color="F4B084", end_color="F4B084", fill_type="solid")
+        cell.fill = column_fill  
     for r_idx, row in cingting_result.iterrows():
         for c_idx, value in enumerate(row):
-            ws.cell(row=r_idx + 7, column=c_idx + 1, value=value)
+            cell=ws.cell(row=r_idx + 7, column=c_idx + 1, value=value)
+            if(r_idx%2==0):
+                column_fill = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
+            else:
+                column_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            cell.fill=column_fill
     for col_idx, col_name in enumerate(changl_result.columns, start=1):
         cell=ws.cell(row=6+length_2, column=col_idx, value=col_name)  # 放置欄位名稱
-        cell.fill = header_fill  
+        column_fill = PatternFill(start_color="C6E0B4", end_color="C6E0B4", fill_type="solid")
+        cell.fill = column_fill  
     for r_idx, row in changl_result.iterrows():
         for c_idx, value in enumerate(row):
-            ws.cell(row=r_idx + 7+length_2, column=c_idx + 1, value=value)
-
+            cell=ws.cell(row=r_idx + 7+length_2, column=c_idx + 1, value=value)
+            if(r_idx%2==0):
+                column_fill = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
+            else:
+                column_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            cell.fill=column_fill
     for col_idx, col_name in enumerate(cingting_day.columns, start=29):  
         cell=ws.cell(row=1, column=col_idx, value=col_name)  # 放置欄位名稱
         cell.fill = header_fill  
@@ -865,20 +890,31 @@ def ALL(path):
     for r_idx, row in changl_day.iterrows():
         for c_idx, value in enumerate(row):
             ws.cell(row=r_idx + length+1, column=c_idx + 29, value=value)
+    
     for col_idx, col_name in enumerate(pinghao_a.columns, start=45):  
         cell=ws.cell(row=1, column=col_idx, value=col_name)  # 放置欄位名稱
-        cell.fill = header_fill  
+        column_fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
+        cell.fill = column_fill  
     for r_idx, row in pinghao_a.iterrows():
         for c_idx, value in enumerate(row):
-            ws.cell(row=r_idx +2, column=c_idx + 45, value=value)
-
+            cell=ws.cell(row=r_idx +2, column=c_idx + 45, value=value)
+            if(r_idx%2==0):
+                column_fill = PatternFill(start_color="FFE699", end_color="FFE699", fill_type="solid")
+            else:
+                column_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            cell.fill=column_fill
     for col_idx, col_name in enumerate(pinghao_b.columns, start=45):  
         cell=ws.cell(row=length_3, column=col_idx, value=col_name)  # 放置欄位名稱
-        cell.fill = header_fill  
+        column_fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
+        cell.fill = column_fill  
     for r_idx, row in pinghao_b.iterrows():
         for c_idx, value in enumerate(row):
-            ws.cell(row=r_idx+length_3 +1, column=c_idx + 45, value=value)
-    
+            cell=ws.cell(row=r_idx+length_3 +1, column=c_idx + 45, value=value)
+            if(r_idx%2==0):
+                column_fill = PatternFill(start_color="FFE699", end_color="FFE699", fill_type="solid")
+            else:
+                column_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            cell.fill=column_fill
 
     
 
