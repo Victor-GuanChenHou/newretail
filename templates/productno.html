@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+
+{% block title %}通路報表產生器{% endblock %}
+
+
+
+{% block content %}
+
+    <div class="filter-bar">
+        <div class="left-group">
+            <div class="search-wrapper">
+                <label for="search">搜尋品號：</label>
+                <input type="text" id="search" placeholder="輸入品號" oninput="filterRows()" {% if no_data %}disabled style="background-color: #ccc; cursor: not-allowed;"{% endif %}>
+            </div>
+                
+            
+        </div>
+        <div class="right-group"></div>
+                <button class="add-btn" onclick="openModal()">新增資料</button>
+        </div>
+            
+        
+    </div>
+    <table id="productnotable" style="width: 95%; margin: auto;">
+        <colgroup>
+            <col style="width: 20%;">
+            <col style="width: 40%;">
+            <col style="width: 18%;">
+            <col style="width: 17%;">
+            <col style="width: 10%;">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>品號</th>
+                <th>商品品名</th>
+                <th>保存期限(天)</th>
+                <th>成本</th>
+                <th>修改</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if not product_list.empty %}
+                {% for _, item in product_list.iterrows() %}
+                <tr>
+                    <td>{{ item['品號'] }}</td>
+                    <td>{{ item['商品品名'] }}</td>
+                    <td>{{ item['保存期限(天)'] }}</td>
+                    <td>{{ item['成本'] }}</td>
+                    <td>
+                        <div class="editdeletdropdown" style="position: relative;">
+                            <img src="/static/img/edit.png" alt="操作" class="editdeletdropdown-btn"
+                                onclick="EditDeletDropdown(this)"
+                                style="cursor:pointer; width:20px; height:20px;">
+
+                            <div class="editdeletdropdown-content"
+                                style="display:none; position:absolute; right:0; top:25px; background:#fff; border:1px solid #ccc; box-shadow:0 2px 8px rgba(0,0,0,0.15); border-radius:5px; min-width:80px; z-index:100;">
+                                <button class="editBtn"
+                                    data-nu="{{ item['品號'] }}"
+                                    data-name="{{ item['商品品名'] }}"
+                                    data-day="{{ item['保存期限(天)'] }}"
+                                    data-money="{{ item['成本'] }}"
+                                    onclick="openEditModal(this)"  
+                                    style="display:block; width:100%; padding:8px; border:none; background:none; text-align:left;">
+                                    修改
+                                </button>
+
+                                <button class="deletbtn"
+                                        data-nu="{{ item['品號'] }}"
+                                        data-name="{{ item['商品品名'] }}"
+                                        data-day="{{ item['保存期限(天)'] }}"
+                                        data-money="{{ item['成本'] }}"
+                                        onclick="opendeletModal(this)"  
+                                        style="display:block; width:100%; padding:8px; border:none; background:none; text-align:left;">
+                                    刪除
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: gray;">查無資料</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+
+    <script>
+        
+
+        function filterTable() {
+            const input = document.getElementById("search").value.toLowerCase();
+            const rows = document.querySelectorAll("#productnotable tbody tr");
+
+            rows.forEach(row => {
+                const department = row.cells[0].textContent.toLowerCase();
+                row.style.display = department.includes(input) ? "" : "none";
+            });
+        }
+        function filterRows() {
+            const searchValue = document.getElementById("search").value.trim().toLowerCase();
+            const rows = document.querySelectorAll("#productnotable tbody tr");
+
+            rows.forEach(row => {
+                const productNo = row.cells[0].textContent.trim().toLowerCase();  // 假設第0欄是「品號」
+
+                if (productNo.includes(searchValue)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+    </script>
+</body>
+<div id="DeletModal" class="deletmodal">
+    <div class="deletmodal-content">
+        <span class="close" onclick="closedeletModal()">&times;</span>
+        <h2 style="color: red;">是否要刪除資料</h2>
+        <label for="EstoreName">品號：</label>
+        <span id="deleteStoreName"></span>
+        <div class="deletmodal-actions">
+            <button onclick="savedelet()">確定</button>
+            <button onclick="closedeletModal()">取消</button>
+        </div>
+    </div>
+    <style>
+    /* Modal 遮罩 */
+    .deletmodal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        }
+
+        /* Modal 內容 */
+        .deletmodal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 400px;
+        font-family: "Microsoft JhengHei", sans-serif;
+        position: relative;
+        }
+
+        /* 關閉按鈕 */
+        .close {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 24px;
+        cursor: pointer;
+        }
+
+        /* 表單項目 */
+        .deletmodal-content label {
+        display: block;
+        margin-top: 12px;
+        font-weight: bold;
+        }
+
+        .deletmodal-content input,
+        .deletmodal-content select {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+        }
+
+        /* 動作按鈕 */
+        .deletmodal-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .deletmodal-actions button {
+            padding: 8px 16px;
+            background-color: #352349;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .deletmodal-actions button:hover {
+            background-color: #4b3566;
+        }
+            
+    </style>
+    <script>
+        function opendeletModal(btn) {
+            const dnu = btn.dataset.nu;
+            document.getElementById('deleteStoreName').textContent = dnu;
+            // 應該是顯示整個 Modal（含遮罩）
+            document.getElementById('DeletModal').style.display = 'block';
+        }
+
+        function closedeletModal() {
+            document.getElementById("DeletModal").style.display = "none";
+        }
+        function savedelet() {
+            const dnu = document.getElementById("deleteStoreName").textContent;
+            
+            
+
+            // 用 fetch 發送 POST
+            fetch("/deletdata", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({dnu})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 成功後更新表格
+                    
+
+                    closedeletModal();
+                    location.reload(); 
+                } else {
+                    alert("更新失敗:"+data.error );
+                    closedeletModal();
+                    location.reload(); 
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("發生錯誤，請稍後再試。");
+                closedeletModal();
+                location.reload(); 
+            });
+            
+        }
+    </script>
+</div>
+<div id="EditModal" class="editmodal">
+  <div class="editmodal-content">
+    <span class="close" onclick="closeEditModal()">&times;</span>
+
+    <h2>修改資料</h2>
+
+    <label for="enu">品號：</label>
+    <input type="text" id="enu" placeholder="品號">
+
+    <label for="ename">商品品名：</label>
+    <input type="text" id="ename" placeholder="商品品名">
+
+    <label for="eday">保存期限(天)：</label>
+    <input type="text" id="eday" placeholder="保存期限(天)">
+
+    <label for="emoney">成本：</label>
+    <input type="text" id="emoney" placeholder="輸入 成本">
+
+    <div class="editmodal-actions">
+      <button onclick="saveedit()">儲存</button>
+      <button onclick="closeEditModal()">取消</button>
+    </div>
+    <input type="hidden" id="ori_nu">
+    <input type="hidden" id="ori_name">
+    <input type="hidden" id="ori_day">
+    <input type="hidden" id="ori_money">
+  </div>
+  <style>
+    /* Modal 遮罩 */
+    .editmodal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        }
+
+        /* Modal 內容 */
+        .editmodal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 400px;
+        font-family: "Microsoft JhengHei", sans-serif;
+        position: relative;
+        }
+
+        /* 關閉按鈕 */
+        .close {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 24px;
+        cursor: pointer;
+        }
+
+        /* 表單項目 */
+        .editmodal-content label {
+        display: block;
+        margin-top: 12px;
+        font-weight: bold;
+        }
+
+        .editmodal-content input,
+        .editmodal-content select {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+        }
+
+        /* 動作按鈕 */
+        .editmodal-actions {
+        margin-top: 20px;
+        text-align: right;
+        }
+
+        .editmodal-actions button {
+        padding: 8px 16px;
+        margin-left: 8px;
+        background-color: #352349;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        }
+
+        .editmodal-actions button:hover {
+        background-color: #4b3566;
+        }
+  </style>
+  <script>
+    function openEditModal(btn) {
+        const enu = btn.dataset.nu;
+        const ename = btn.dataset.name;
+        const eday = btn.dataset.day;
+        const emoney = btn.dataset.money;
+        // 將值填入 modal 表單
+        document.getElementById("enu").value = enu;
+        document.getElementById("ename").value = ename;
+        document.getElementById("emoney").value = emoney;
+        document.getElementById("eday").value = eday;
+        document.getElementById("ori_nu").value = enu;
+        document.getElementById("ori_name").value = ename;
+        document.getElementById("ori_money").value = emoney;
+        document.getElementById("ori_day").value = eday;
+        document.getElementById("EditModal").style.display = "block";
+    }
+    function closeEditModal() {
+        document.getElementById("EditModal").style.display = "none";
+        // 清空欄位
+        document.getElementById("enu").value = "";
+        document.getElementById("ename").value = "";
+        document.getElementById("emoney").value = "";
+        document.getElementById("eday").value = "";
+        
+    }
+
+
+    function saveedit() {
+        const enu = document.getElementById("enu").value;
+        const ename = document.getElementById("ename").value.trim();
+        const emoney = document.getElementById("emoney").value.trim();
+        const eday = document.getElementById("eday").value.trim();
+       
+        const ori_nu = document.getElementById("ori_nu").value;
+        const ori_name = document.getElementById("ori_name").value.trim();
+        const ori_money = document.getElementById("ori_money").value.trim();
+        const ori_day = document.getElementById("ori_day").value.trim();
+        if (!enu || !ename ||!emoney || !eday) {
+            alert("請完整填寫資料！");
+            return;
+        }
+
+        // 用 fetch 發送 POST
+        fetch("/editdata", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ enu, ename, emoney,eday,ori_nu ,ori_name,ori_money,ori_day})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 成功後更新表格
+                
+
+                closeEditModal();
+                location.reload(); 
+            } else {
+                alert("更新失敗:"+data.error );
+                closeEditModal();
+                location.reload(); 
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("發生錯誤，請稍後再試。");
+            closeEditModal();
+            location.reload(); 
+        });
+        
+    }
+  </script>
+</div>
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+
+    <h2>新增資料</h2>
+
+    <label for="nu">品號：</label>
+    <input type="text" id="nu" placeholder="品號">
+
+    <label for="name">商品品名：</label>
+    <input type="text" id="name" placeholder="商品品名">
+
+    <label for="day">保存期限(天)：</label>
+    <input type="text" id="day" placeholder="保存期限(天)">
+
+    <label for="money">成本：</label>
+    <input type="text" id="money" placeholder="輸入 成本">
+
+    <div class="modal-actions">
+      <button onclick="saveEntry()">儲存</button>
+      <button onclick="closeModal()">取消</button>
+    </div>
+  </div>
+  <style>
+    /* Modal 遮罩 */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        }
+
+        /* Modal 內容 */
+        .modal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 400px;
+        font-family: "Microsoft JhengHei", sans-serif;
+        position: relative;
+        }
+
+        /* 關閉按鈕 */
+        .close {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 24px;
+        cursor: pointer;
+        }
+
+        /* 表單項目 */
+        .modal-content label {
+        display: block;
+        margin-top: 12px;
+        font-weight: bold;
+        }
+
+        .modal-content input,
+        .modal-content select {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+        }
+
+        /* 動作按鈕 */
+        .modal-actions {
+        margin-top: 20px;
+        text-align: right;
+        }
+
+        .modal-actions button {
+        padding: 8px 16px;
+        margin-left: 8px;
+        background-color: #352349;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        }
+
+        .modal-actions button:hover {
+        background-color: #4b3566;
+        }
+  </style>
+  <script>
+    function openModal() {
+        document.getElementById("addModal").style.display = "block";
+    }
+    
+
+    function closeModal() {
+        document.getElementById("addModal").style.display = "none";
+        // 清空欄位
+        document.getElementById("nu").value = "";
+        document.getElementById("name").value = "";
+        document.getElementById("day").value = "";
+        document.getElementById("money").value = "";
+        
+    }
+
+    function saveEntry() {
+        const nu = document.getElementById("nu").value;
+        const name = document.getElementById("name").value.trim();
+        const day = document.getElementById("day").value.trim();
+        const money = document.getElementById("money").value.trim();
+        if (!nu || !name || !day || !money) {
+            alert("請完整填寫資料！");
+            return;
+        }
+
+        // 用 fetch 發送 POST
+        fetch('/adddata', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nu, name, day, money })
+        })
+        .then(async response => {
+            const text = await response.text();
+            console.log("Raw response text:", text);
+            try {
+                const data = JSON.parse(text);
+                console.log("Parsed JSON:", data);
+
+                if (data.success) {
+                    const table = document.querySelector("#productnotable tbody");
+                    const newRow = document.createElement("tr");
+                    newRow.innerHTML = `
+                        <td>${nu}</td>
+                        <td>${name}</td>
+                        <td>${day}</td>
+                        <td>${money}</td>
+                    `;
+                    table.appendChild(newRow);
+
+                    closeModal();
+                    location.reload();
+                } else {
+                    alert("新增失敗: " + data.error);
+                    closeModal();
+                    location.reload();
+                }
+            } catch (err) {
+                console.error("JSON parse error:", err);
+                alert("伺服器回傳格式錯誤！");
+                closeModal();
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error("Fetch 發生錯誤:", error);
+            alert("發生錯誤，請稍後再試。");
+            closeModal();
+            location.reload();
+        });
+        
+    }
+    function EditDeletDropdown(button) {
+        const dropdown = button.nextElementSibling;
+        if (!dropdown) return;
+
+        // 關閉其他 dropdown
+        document.querySelectorAll(".editdeletdropdown-content").forEach(el => {
+        if (el !== dropdown) el.style.display = "none";
+        });
+
+        // 切換當前的 dropdown 顯示
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    // 點其他地方關閉 dropdown
+    document.addEventListener("click", function (event) {
+        const dropdowns = document.querySelectorAll(".editdeletdropdown-content");
+        dropdowns.forEach(dropdown => {
+        // 檢查點擊區域是否在 dropdown 或 edit 圖示內
+        if (!dropdown.contains(event.target) && !dropdown.previousElementSibling.contains(event.target)) {
+            dropdown.style.display = "none";
+        }
+        });
+    });
+  </script>
+</div>
+
+{% endblock %}

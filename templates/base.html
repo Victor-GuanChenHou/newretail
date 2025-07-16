@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}通路報表產生器{% endblock %}</title>
+    <link rel="shortcut icon" href="/icon" type="image/x-icon">
+    <style>
+        body {
+            margin: 0;
+            background: rgba(53, 35, 73, 0.1);  
+            font-family: "Microsoft JhengHei", sans-serif;
+        }
+        .navbar {
+            display: flex;
+            align-items: center;
+            background: rgba(53, 35, 73, 1);
+            color: white;
+            padding: 10px 20px;
+        }
+        .navbar img.logo {
+            height: 60px;
+            margin-right: 40px;
+        }
+        .nav-links {
+            display: flex;
+            flex: 1;
+            gap: 40px;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        .user-info {
+            margin-left: auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .publicholiday-info {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #214647;
+            font-size: 20px;
+        }
+        .name {
+            font-size: 18px;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background-color: white;
+            color: #214647;
+            min-width: 100px;
+            border-radius: 6px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .dropdown-content a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #214647;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+        }
+        /* .dropdown-content a:hover {
+            background-color: #f0f0f0;
+        } */
+        .user-info.show .dropdown-content {
+            display: block;
+        }
+        .publicdropdown-content {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background-color: white;
+            color: #214647;
+            min-width: 200px;
+            border-radius: 6px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .publicdropdown-content a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #214647;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+        }
+        .publicdropdown-content a:hover {
+            background-color: #f0f0f0;
+        }
+        .publicholiday-info.show .publicdropdown-content {
+            display: block;
+        }
+        .export-btn:hover {
+            background-color: #4b3566;
+        }
+
+        img.signature {
+            height: 50px;
+        }
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 6px;
+            background: white;
+        }
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin: 20px auto;
+            width: 95%;
+        }
+        .left-group, .right-group {
+            align-items: flex-end;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+         .search-wrapper{
+            display: flex;
+            flex-direction: column;
+            font-family: "Microsoft JhengHei", sans-serif;
+            font-size: 16px;
+            color: #4b5563;
+        }
+        .search-wrapper input {
+            padding: 8px 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .search-wrapper label {
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #374151;
+        }
+       .search-wrapper select {
+            appearance: none;
+            padding: 10px 12px;
+            font-size: 16px;
+            width: 150px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background-color: #fff;
+            color: #374151;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23374151' stroke-width='2'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .search-wrapper select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }.add-btn {
+            height: 40px;
+            padding: 0 20px;
+            font-size: 16px;
+            background-color: #352349;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 24px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .add-btn:hover {
+            background-color: #4b3566;
+        }
+        canvas {
+            border: 1px solid #000;
+            background: white;
+        }
+        .loading {
+            display: none;
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- ✅ Navbar -->
+    <div class="navbar">
+        <a href="{{ url_for('home') }}">
+            <img src="/static/img/logo.png" alt="Kingza Logo" class="logo" />
+        </a>
+
+        <div id="holiday1" class="publicholiday-info" style="margin-right: 26px;" onclick="publicholiday('holiday1')">
+            <div class="name">通路報表產生器</div>
+            <div class="publicdropdown-content">
+                <a href="{{ url_for('index') }}">資料下載</a>
+                <a href="{{ url_for('productno') }}">資料維護</a>
+            </div>
+        </div>
+        
+
+        <!-- 共用的使用者資訊 -->
+       
+    </div>
+
+    <!-- ✅ 內容區塊 -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- ✅ JS -->
+    <script>
+        function toggleDropdown() {
+            document.querySelector('.user-info').classList.toggle('show');
+        }
+        function publicholiday(id) {
+            document.querySelectorAll('.publicholiday-info').forEach(el => {
+                if (el.id === id) {
+                    el.classList.toggle('show');
+                } else {
+                    el.classList.remove('show');
+                }
+            });
+        }
+
+        window.addEventListener('click', function(event) {
+            const holidayInfos = document.querySelectorAll('.publicholiday-info');
+            holidayInfos.forEach(info => {
+                if (!info.contains(event.target)) {
+                    info.classList.remove('show');
+                }
+            });
+
+            const userInfo = document.querySelector('.user-info');
+            if (!userInfo.contains(event.target)) {
+                userInfo.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

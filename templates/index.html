@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}通路報表產生器{% endblock %}
+
+{% block content %}
+
+
+    <h1>青田明細</h1>
+
+    <!-- ✅ 下載報表（保持原樣） -->
+    <button onclick="downloadFile()">下載檔案</button>
+    <div class="loading" id="loading">處理中...</div>
+
+    <hr>
+    <h1>全日明細</h1>
+    <h5>請先選擇全日資料</h5>
+    <!-- ✅ 上傳並處理檔案 -->
+    <input type="file" id="fileInput">
+    <button onclick="uploadAndDownload()">上傳並下載</button>
+    
+    <div style="margin-top: 10px;">
+        <button onclick="ALL()" style="width: 340px;">下載總表</button>
+        <div class="loading" id="uploading">上傳與處理中...</div>
+    </div>
+    
+    <script>
+        // ✅ 下載報表（與後端 `/generate` 連接，保持原樣）
+        function downloadFile() {
+            document.getElementById("loading").style.display = "block"; // 顯示 loading 效果
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');    
+            fetch('/generate')
+                .then(response => response.blob())  // 取得二進位 Excel 檔案
+                .then(blob => {
+                    document.getElementById("loading").style.display = "none"; // 隱藏 loading 效果
+                    
+                    const link = document.createElement('a');
+                    const url = window.URL.createObjectURL(blob);
+                    link.href = url;
+                    link.download = '王座青田明細'+today+'.xlsx';  // 設置下載的檔案名稱
+                    link.click();
+                    window.URL.revokeObjectURL(url); // 釋放 URL
+                })
+                .catch(error => {
+                    document.getElementById("loading").style.display = "none"; // 隱藏 loading 效果
+                    alert("發生錯誤：" + error);
+                });
+        }
+
+        // ✅ 上傳並下載處理後的報表
+        function uploadAndDownload() {
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("請選擇要上傳的檔案！");
+                return;
+            }
+
+            document.getElementById("uploading").style.display = "block"; // 顯示處理中
+
+            const formData = new FormData();
+            formData.append("file", file);
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');    
+            
+            fetch('/upload_and_process', {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("處理失敗！");
+                }
+                return response.blob();  // 以二進位方式獲取檔案
+            })
+            .then(blob => {
+                document.getElementById("uploading").style.display = "none"; // 隱藏處理中
+
+                const link = document.createElement('a');
+                const url = window.URL.createObjectURL(blob);
+                link.href = url;
+               
+                link.download = '王座全日明細'+today+'.xlsx';  // 設置下載檔案的名稱
+                link.click();
+                window.URL.revokeObjectURL(url); // 釋放 URL
+            })
+            .catch(error => {
+                document.getElementById("uploading").style.display = "none"; // 隱藏處理中
+                alert("發生錯誤：" + error);
+            });
+        }
+        function ALL() {
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("請選擇要上傳的檔案！");
+                return;
+            }
+
+            document.getElementById("uploading").style.display = "block"; // 顯示處理中
+
+            const formData = new FormData();
+            formData.append("file", file);
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');    
+            
+            fetch('/upload_ALL', {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("處理失敗！");
+                }
+                return response.blob();  // 以二進位方式獲取檔案
+            })
+            .then(blob => {
+                document.getElementById("uploading").style.display = "none"; // 隱藏處理中
+
+                const link = document.createElement('a');
+                const url = window.URL.createObjectURL(blob);
+                link.href = url;
+               
+                link.download = '王座總表'+today+'.xlsx';  // 設置下載檔案的名稱
+                link.click();
+                window.URL.revokeObjectURL(url); // 釋放 URL
+            })
+            .catch(error => {
+                document.getElementById("uploading").style.display = "none"; // 隱藏處理中
+                alert("發生錯誤：" + error);
+            });
+        }
+
+    </script>
+{% endblock %}
