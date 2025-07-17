@@ -10,7 +10,7 @@
         <div class="left-group">
             <div class="search-wrapper">
                 <label for="search">搜尋品號：</label>
-                <input type="text" id="search" placeholder="輸入品號" oninput="filterRows()" {% if no_data %}disabled style="background-color: #ccc; cursor: not-allowed;"{% endif %}>
+                <input type="text" id="search" placeholder="輸入品號or品名" oninput="filterRows()" {% if no_data %}disabled style="background-color: #ccc; cursor: not-allowed;"{% endif %}>
             </div>
                 
             
@@ -105,8 +105,8 @@
 
             rows.forEach(row => {
                 const productNo = row.cells[0].textContent.trim().toLowerCase();  // 假設第0欄是「品號」
-
-                if (productNo.includes(searchValue)) {
+                const productName = row.cells[1].textContent.trim().toLowerCase();    
+                if (productNo.includes(searchValue) || productName.includes(searchValue) ) {
                     row.style.display = "";
                 } else {
                     row.style.display = "none";
