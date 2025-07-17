@@ -47,15 +47,21 @@ def adddata():
         # 使用pandas的read_excel函數讀取Excel文件
         inputdata = pd.read_excel(file_path, engine='openpyxl')
         inputdata.columns = ['品號', '商品品名', '保存期限(天)', '成本']
-        new_row = pd.DataFrame([{
-        '品號': nu,
-        '商品品名': name,
-        '保存期限(天)': day,
-        '成本': money
-        }])
-        updated_data = pd.concat([inputdata, new_row], ignore_index=True)
-        updated_data.to_excel(file_path, index=False, engine='openpyxl')
-        return jsonify({'success': True, 'message': '資料已成功新增'})
+
+        match = ((inputdata['品號'] == nu))
+
+        if match.sum() != 0:
+            return jsonify({'success': False, 'error': '已有此筆資料'})
+        else:
+            new_row = pd.DataFrame([{
+            '品號': nu,
+            '商品品名': name,
+            '保存期限(天)': day,
+            '成本': money
+            }])
+            updated_data = pd.concat([inputdata, new_row], ignore_index=True)
+            updated_data.to_excel(file_path, index=False, engine='openpyxl')
+            return jsonify({'success': True, 'message': '資料已成功新增'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 @app.route('/editdata', methods=["POST"])
