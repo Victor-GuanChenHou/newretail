@@ -7,7 +7,14 @@ def outputexcel():
     from openpyxl.styles import PatternFill
     import os
     from openpyxl import Workbook
-    
+    from dotenv import load_dotenv
+    import os
+    ENV = './.env' 
+    load_dotenv(dotenv_path=ENV)
+    DB_host = os.getenv('DB_host')
+    DB_password = os.getenv('DB_password')
+    DB_uid=os.getenv('DB_uid')
+    DATABASE=os.getenv('DATABASE')
     # 讀取進價.xlsx文件
     file_path = '進價.xlsx'  # 請根據實際文件位置修改
 
@@ -17,10 +24,10 @@ def outputexcel():
         # 建立與 SQL Server 的連線
         conn = pyodbc.connect(
             "DRIVER={ODBC Driver 17 for SQL Server};"
-            "SERVER=10.140.0.5;"  # 替換為完整的伺服器名稱
-            "DATABASE=Lakaffa004;"
-            "UID=sa;"  # 使用 sa 作為使用者名稱
-            "PWD=dsc@42756204;"  # 替換為 sa 的密碼
+            f"SERVER={DB_host};"  # 替換為完整的伺服器名稱
+            f"DATABASE={DATABASE};"
+            f"UID={DB_uid};"  # 使用 sa 作為使用者名稱
+            f"PWD={DB_password};"  # 替換為 sa 的密碼
             "Trusted_Connection=no;" # 明確使用 SQL Server 認證
               
         )
@@ -89,6 +96,7 @@ def outputexcel():
 
     for z in range(len(data['品號'])):
         filtered_df = inputdata[inputdata['品號'] == data['品號'][z]]
+        print("欄位名稱：", filtered_df.columns.tolist())
         if filtered_df.empty:
             shelflifeday.append(0)
         else:
@@ -332,7 +340,14 @@ def ALL(path):
     from openpyxl.utils import get_column_letter
     import os
     from openpyxl import Workbook
-    
+    from dotenv import load_dotenv
+    import os
+    ENV = './.env' 
+    load_dotenv(dotenv_path=ENV)
+    DB_host = os.getenv('DB_host')
+    DB_password = os.getenv('DB_password')
+    DB_uid=os.getenv('DB_uid')
+    DATABASE=os.getenv('DATABASE')
     # 讀取進價.xlsx文件
     file_path = '進價.xlsx'  # 請根據實際文件位置修改
 
@@ -342,10 +357,10 @@ def ALL(path):
         # 建立與 SQL Server 的連線
         conn = pyodbc.connect(
             "DRIVER={ODBC Driver 17 for SQL Server};"
-            "SERVER=10.140.0.5;"  # 替換為完整的伺服器名稱
-            "DATABASE=Lakaffa004;"
-            "UID=sa;"  # 使用 sa 作為使用者名稱
-            "PWD=dsc@42756204;"  # 替換為 sa 的密碼
+            f"SERVER={DB_host};"  # 替換為完整的伺服器名稱
+            f"DATABASE={DATABASE};"
+            f"UID={DB_uid};"  # 使用 sa 作為使用者名稱
+            f"PWD={DB_password};"  # 替換為 sa 的密碼
             "Trusted_Connection=no;" # 明確使用 SQL Server 認證
               
         )
