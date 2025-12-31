@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}通路報表產生器{% endblock %}
+
+{% block content %}
+<style>
+
+
+    .container {
+        padding: 20px;
+        color: #333;
+        max-width: 400px;
+    }
+
+    .input-group {
+        margin-bottom: 15px;
+    }
+
+    .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .input-field {
+        padding: 8px;
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box; /* 確保 padding 不會撐破寬度 */
+    }
+</style>
+
+<div class="container">
+    <h2>ERP請購單複製作業</h2>
+    
+    <form id="erpCopyForm" style="margin-top: 20px;">
+        <div class="input-group">
+            <label for="report_date">選擇建立請購單日期：</label>
+            <input type="date" id="report_date" name="report_date" class="input-field">
+        </div>
+
+        <div class="input-group">
+            
+            <label for="digit_code">輸入需複製請購單號 (11 位數字)：</label>
+            <input type="text" 
+                   id="digit_code" 
+                   name="digit_code" 
+                   maxlength="11" 
+                   placeholder="例如: 20250101001"
+                   required 
+                   class="input-field">
+            <small style="color: #666;">※ 必須為 11 位純數字</small>
+        </div>
+
+        <button type="button" class="add-btn" onclick="startCopy()">
+            開始複製
+        </button>
+    </form>
+</div>
+
+<script>
+    // 1. 初始化：自動設定日期為今天
+    document.getElementById('report_date').valueAsDate = new Date();
+
+    // 2. 限制輸入框只能輸入數字
+    const digitInput = document.getElementById('digit_code');
+    digitInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // 3. 使用 Fetch 傳送資料
+    function startCopy() {
+        const reportDate = document.getElementById('report_date').value;
+        const digitCode = document.getElementById('digit_code').value;
+
+        // 簡單的前端驗證
+        if (!reportDate) {
+            alert("請選擇日期");
+            return;
+        }
+        if (digitCode.length !== 11) {
+            alert("請購單號長度必須為 11 位數字");
+            return;
+        }
+
+        // 封裝 JSON 資料
+        const payload = {
+            report_date: reportDate,
+            digit_code: digitCode
+        };
+
+        // 按鈕狀態回饋（防止重複點擊）
+        const btn = document.querySelector('.add-btn');
+        btn.disabled = true;
+        btn.innerText = "處理中...";
+
+        fetch("/duplidata", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('連線伺服器失敗');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert("請購單號:"+ (data.message ));
+                location.reload(); // 成功後刷新頁面
+            } else {
+                alert("錯誤：" + (data.message ));
+                btn.disabled = false;
+                btn.innerText = "開始複製";
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("發生錯誤，請稍後再試。");
+            btn.disabled = false;
+            btn.innerText = "開始複製";
+        });
+    }
+</script>
+{% endblock %}

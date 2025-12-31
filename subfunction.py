@@ -1030,3 +1030,161 @@ def ALL(path):
     wb.save(full_path)
     message=full_path
     return message
+def search_PURTA(TA002):
+    import pyodbc
+    import pandas as pd
+    from openpyxl import Workbook
+    import pandas as pd
+    from datetime import datetime
+    from openpyxl.styles import PatternFill
+    import os
+    from openpyxl import Workbook
+    from dotenv import load_dotenv
+    import os
+    ENV = './.env' 
+    load_dotenv(dotenv_path=ENV)
+    DB_host = os.getenv('DB_host')
+    DB_password = os.getenv('DB_password')
+    DB_uid=os.getenv('DB_uid')
+    DATABASE=os.getenv('DATABASE')
+    try:
+        # 建立與 SQL Server 的連線
+        conn = pyodbc.connect(
+            "DRIVER={ODBC Driver 17 for SQL Server};"
+            f"SERVER={DB_host};"  # 替換為完整的伺服器名稱
+            f"DATABASE={DATABASE};"
+            f"UID={DB_uid};"  # 使用 sa 作為使用者名稱
+            f"PWD={DB_password};"  # 替換為 sa 的密碼
+            "Trusted_Connection=no;" # 明確使用 SQL Server 認證
+              
+        )
+
+    
+
+        # SQL1 查詢語句
+        Sql1 = f"""
+            SELECT TA002
+            FROM PURTA
+            WHERE TA001='310' AND TA002=?
+        """
+        df = pd.read_sql(Sql1, conn, params=(TA002,))
+       
+        conn.close()
+        
+        if not df.empty:
+            return True
+        else:
+            return False
+    except:
+        return False
+def duplicate_FULL(TA002, date):
+    """
+    old_ta002: 舊的單號 (例如 '20170309004')
+    report_date_str: 格式為 '2025-12-31'
+    """
+    import pyodbc
+    import pandas as pd
+    from openpyxl import Workbook
+    import pandas as pd
+    from datetime import datetime
+    from openpyxl.styles import PatternFill
+    import os
+    from openpyxl import Workbook
+    from dotenv import load_dotenv
+    import os
+    ENV = './.env' 
+    load_dotenv(dotenv_path=ENV)
+    DB_host = os.getenv('DB_host')
+    DB_password = os.getenv('DB_password')
+    DB_uid=os.getenv('DB_uid')
+    DATABASE=os.getenv('DATABASE')
+    # DATABASE='KingzaTest'
+    # 格式化日期格式為 YYYYMMDD
+    clean_date = date.replace('-', '')
+    conn = pyodbc.connect(
+            "DRIVER={ODBC Driver 17 for SQL Server};"
+            f"SERVER={DB_host};"  # 替換為完整的伺服器名稱
+            f"DATABASE={DATABASE};"
+            f"UID={DB_uid};"  # 使用 sa 作為使用者名稱
+            f"PWD={DB_password};"  # 替換為 sa 的密碼
+            "Trusted_Connection=no;" # 明確使用 SQL Server 認證
+              
+        )
+    cursor = conn.cursor()
+    
+    try:
+        # 1. 取得新單號 (TA002 / TB002)
+        cursor.execute("SELECT MAX(TA002) FROM PURTA WHERE TA002 LIKE ?", (f"{clean_date}%",))
+        max_id = cursor.fetchone()[0]
+        new_no = f"{clean_date}{int(max_id[-3:]) + 1:03d}" if max_id else f"{clean_date}001"
+
+        # --- 開始複製 PURTA (單頭) ---
+        insert_ta_sql = f"""
+        INSERT INTO PURTA ([COMPANY], [CREATOR], [USR_GROUP], [CREATE_DATE], [MODIFIER], [MODI_DATE], [FLAG], 
+            [CREATE_TIME], [MODI_TIME], [TRANS_TYPE], [TRANS_NAME], [TA001], [TA002], [TA003], [TA006], 
+            [TA007], [TA008], [TA009], [TA013], [TA014], [TA016], [TA017], 
+            [TA004], [TA005], [TA010], [TA011], [TA012], [TA015], [TA018], [TA019], [TA020], [TA021], [TA022], 
+            [TA023], [TA024], [TA025], [TA026], [TA027], [TA028], [TA029], [TA030], [TA031], [TA032], [TA033], 
+            [TA034], [TA035], [TA036], [TA037], [TA038], [TA039], [TA040], [TA041], [TA042], [TA043], [TA044], 
+            [TA045], [TA046], [UDF01], [UDF02], [UDF03], [UDF04], [UDF05], [UDF06], [UDF07], [UDF08], [UDF09], [UDF10])
+        SELECT [COMPANY], [CREATOR], [USR_GROUP], '{clean_date}', '', '', '1', '01:00:00', '', [TRANS_TYPE], 
+            'newretail_dupli', [TA001], '{new_no}', '{clean_date}', '', 'N', '0', '0', '{clean_date}', '', 'N', '0',
+            [TA004], [TA005], [TA010], [TA011], [TA012], [TA015], [TA018], [TA019], [TA020], [TA021], [TA022], 
+            [TA023], [TA024], [TA025], [TA026], [TA027], [TA028], [TA029], [TA030], [TA031], [TA032], [TA033], 
+            [TA034], [TA035], [TA036], [TA037], [TA038], [TA039], [TA040], [TA041], [TA042], [TA043], [TA044], 
+            [TA045], [TA046], [UDF01], [UDF02], [UDF03], [UDF04], [UDF05], [UDF06], [UDF07], [UDF08], [UDF09], [UDF10]
+        FROM PURTA WHERE TA002 = ?
+        """
+        cursor.execute(insert_ta_sql, (TA002,))
+
+        # --- 開始複製 PURTB (單身) ---
+        # 注意：TB018 = TB014 * TB017
+        insert_tb_sql = f"""
+            INSERT INTO PURTB ([COMPANY], [CREATOR], [USR_GROUP], [CREATE_DATE], [MODIFIER], [MODI_DATE], [FLAG], 
+                [CREATE_TIME], [MODI_TIME], [TRANS_TYPE], [TRANS_NAME], [TB001], [TB002], [TB011], [TB013], 
+                [TB014], [TB015], [TB018], [TB019], [TB020], [TB021], [TB022], [TB025],
+                [TB003], [TB004], [TB005], [TB006], [TB007], [TB008], [TB009], [TB010], [TB012], [TB016], [TB017], 
+                -- ... 其餘欄位不變 ...
+                [TB023], [TB024], [TB026], [TB027], [TB028], [TB029], [TB030], [TB031], [TB032], [TB033], [TB034], 
+                [TB035], [TB036], [TB037], [TB038], [TB039], [TB040], [TB041], [TB042], [TB043], [TB044], [TB045], 
+                [TB046], [TB047], [TB048], [TB049], [TB050], [TB051], [TB052], [TB053], [TB054], [TB055], [TB056], 
+                [TB057], [TB058], [TB059], [TB060], [TB061], [TB062], [TB063], [TB064], [TB065], [TB066], [TB067], 
+                [TB068], [TB069], [TB070], [TB071], [TB072], [TB073], [TB074], [TB075], [TB076], [TB077], [TB078], 
+                [TB079], [TB080], [TB081], [TB082], [TB083], [TB084], [TB085], [TB086], [TB087], [TB088], [TB089], 
+                [TB090], [TB091], [TB092], [TB093], [TB094], [TB095], [TB096], [TB097], [TB098], [TB099], 
+                [UDF01], [UDF02], [UDF03], [UDF04], [UDF05], [UDF06], [UDF07], [UDF08], [UDF09], [UDF10])
+            SELECT [COMPANY], [CREATOR], [USR_GROUP], '{clean_date}', '', '', '1', '01:00:00', '', [TRANS_TYPE], 
+                'newretail_dupli', [TB001], '{new_no}', '{clean_date}', '', 
+                -- TB014 = TB009 (加入 TRY_CAST 預防萬一)
+                [TB009], 
+                -- TB015 = TB007
+                [TB007], 
+                -- TB018 = TB007 * TB017 (使用 TRY_CAST 處理垃圾字元，失敗則給 0)
+                CAST(
+                    ISNULL(TRY_CAST(REPLACE([TB014], ',', '') AS DECIMAL(18, 4)), 0) * ISNULL(TRY_CAST(REPLACE([TB017], ',', '') AS DECIMAL(18, 4)), 0) 
+                AS NVARCHAR(40)),
+                '{clean_date}', 'N', 'N', '', 'N',
+                -- 下面這些是原封不動複製的欄位
+                [TB003], [TB004], [TB005], [TB006], [TB007], [TB008], [TB009], [TB010], [TB012], [TB016], [TB017], 
+                -- ... 其餘 UDF 與 TB 欄位比照辦理 ...
+                [TB023], [TB024], [TB026], [TB027], [TB028], [TB029], [TB030], [TB031], [TB032], [TB033], [TB034], 
+                [TB035], [TB036], [TB037], [TB038], [TB039], [TB040], [TB041], [TB042], [TB043], [TB044], [TB045], 
+                [TB046], [TB047], [TB048], [TB049], [TB050], [TB051], [TB052], [TB053], [TB054], [TB055], [TB056], 
+                [TB057], [TB058], [TB059], [TB060], [TB061], [TB062], [TB063], [TB064], [TB065], [TB066], [TB067], 
+                [TB068], [TB069], [TB070], [TB071], [TB072], [TB073], [TB074], [TB075], [TB076], [TB077], [TB078], 
+                [TB079], [TB080], [TB081], [TB082], [TB083], [TB084], [TB085], [TB086], [TB087], [TB088], [TB089], 
+                [TB090], [TB091], [TB092], [TB093], [TB094], [TB095], [TB096], [TB097], [TB098], [TB099], 
+                [UDF01], [UDF02], [UDF03], [UDF04], [UDF05], [UDF06], [UDF07], [UDF08], [UDF09], [UDF10]
+            FROM PURTB WHERE TB002 = ?
+        """
+        cursor.execute(insert_tb_sql, (TA002,))
+
+        conn.commit()
+        return True, new_no
+        
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+    finally:
+        conn.close()
+# print(duplicate_FULL('20170309001','2025-12-31'))

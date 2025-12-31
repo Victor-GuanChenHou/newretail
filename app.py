@@ -7,14 +7,16 @@ import subfunction as sub
 import pandas as pd
 from openpyxl import Workbook
 import pandas as pd
+import json
 app = Flask(__name__)
 
 # ✅ 設定上傳和處理後的檔案夾
 UPLOAD_FOLDER = 'uploads'
+UPLOAD_EXAMPLE = 'uploads/example'
 PROCESSED_FOLDER = 'processed'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
-
+app.config['UPLOAD_EXAMPLE'] = UPLOAD_EXAMPLE
 # ✅ 確保目錄存在
 for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER]:
     if not os.path.exists(folder):
@@ -34,6 +36,65 @@ def productno():
     inputdata.columns = ['品號', '商品品名', '保存期限(天)', '成本']
 
     return render_template("productno.html",product_list=inputdata)
+@app.route('/dupli')
+def dupli():
+
+    return render_template("dupli.html")
+@app.route('/duplidata', methods=["POST"])
+def duplidata():
+    try:
+        req = request.get_json()
+        digit_code = req.get('digit_code')
+        report_date = req.get('report_date')
+        have=sub.search_PURTA(digit_code)
+        if(have):
+
+            result = sub.duplicate_FULL(digit_code,str(report_date))
+            if result[0]:
+                return jsonify({"success": True, "message": result[1]})
+            else:
+                return jsonify({"success": False, "message": "複製錯誤"})
+        else:
+            return jsonify({"success": False, "message": "查無此單號"})
+    except:
+        return jsonify({"success": False, "message": "資料錯誤"})
+
+@app.route('/mouban')
+def mouban():
+    module = "mouban.json"
+    if os.path.exists(module):
+        with open(module, "r", encoding="utf-8") as f:
+            module_data = json.load(f)
+    else:
+        module_data = {}
+    print(module_data)
+    return render_template("mouban.html",list=module_data)
+@app.route('/moduledata', methods=['POST'])
+def moduledata():
+    req = request.get_json()
+    moduleid = req.get('moduleid')
+    with open("mouban_colum.json", "r", encoding="utf-8") as f:
+        modules = json.load(f)
+    target_data = next((m for m in modules if str(m.get('modul_id')) == moduleid), None)
+    if target_data:
+        excelpath=target_data.get('excelpath', '')
+        full_path = os.path.join(UPLOAD_EXAMPLE, excelpath)
+        try:
+            df = pd.read_excel(full_path)
+            columns = df.columns.tolist()
+        except:
+            return jsonify({"success": False, "message": "找不到資料"})
+        return jsonify({
+            "success": True,
+            "columns": columns, # 下拉選單要顯示的所有選項
+            "current_data": {
+                "columnprname": target_data.get('columnprname', ''),
+                "columnnumber": target_data.get('columnnumber', ''),
+                "columnremark": target_data.get('columnremark', ''),
+            }
+        })
+    
+    return jsonify({"success": False, "message": "找不到資料"})
 @app.route('/adddata', methods=["POST"])
 def adddata():
     try:
