@@ -622,6 +622,7 @@ def ALL(path):
             if result['品號'][z] == cingting_o['品號'][p]:
                 result.loc[z, '青田品名'] = cingting_o.loc[p, '品名']
                 result.loc[z, '規格'] = cingting_o.loc[p, '規格']
+                
         if pd.isna(result['總計'][z]):
             result.loc[z,'總計'] = 0
         for k in range(18):
@@ -667,6 +668,7 @@ def ALL(path):
     start_month = datetime.today().replace(day=1)
 
     months = [(start_month + pd.DateOffset(months=i)).strftime('%Y%m') for i in range(18)]
+    
     months.append('超過18個月')
     months.append('已過期')
     months.insert(0, '品號')
@@ -675,6 +677,7 @@ def ALL(path):
     months.insert(3, '成本')
     months.append('總計')
     months.append('總成本(未稅)')
+
     # 初始化結果表格
     result = pd.DataFrame(columns=months)
     
@@ -743,9 +746,12 @@ def ALL(path):
                 
                 result.loc[z,'成本']=inputdata['成本'][t]   
                 result.loc[z,'總成本(未稅)']=inputdata['成本'][t]*result['總計'][z]
-        for j in range(len(cingting_o)):
-            if result['品號'][z]==cingting_o['品號'][j]:
-                result.loc[z, '規格'] = cingting_o[ '規格'][j]
+        # for j in range(len(cingting_o)):
+        #     if result['品號'][z]==cingting_o['品號'][j]:
+        #         result.loc[z, '規格'] = cingting_o[ '規格'][j]
+        #         print(cingting_o['品號'][j])
+        success,result.loc[z, '規格']=get_format(result['品號'][z])
+
     start_month = datetime.today().replace(day=1)
     months = [(start_month + pd.DateOffset(months=i)).strftime('%Y%m') for i in range(18)]
     new_row = {
@@ -1091,6 +1097,7 @@ def duplicate_FULL(TA002, date):
     import os
     from openpyxl import Workbook
     from dotenv import load_dotenv
+
     import os
     ENV = './.env' 
     load_dotenv(dotenv_path=ENV)
@@ -1098,7 +1105,7 @@ def duplicate_FULL(TA002, date):
     DB_password = os.getenv('DB_password')
     DB_uid=os.getenv('DB_uid')
     DATABASE=os.getenv('DATABASE')
-    # DATABASE='KingzaTest'
+    # DATABASE='KingzaTest'#測試DB
     # 格式化日期格式為 YYYYMMDD
     clean_date = date.replace('-', '')
     conn = pyodbc.connect(
@@ -1187,4 +1194,42 @@ def duplicate_FULL(TA002, date):
         return False, str(e)
     finally:
         conn.close()
+def get_format(productno):
+    import os
+    from dotenv import load_dotenv
+    import pyodbc
+    ENV = './.env' 
+    load_dotenv(dotenv_path=ENV)
+    DB_host = os.getenv('DB_host')
+    DB_password = os.getenv('DB_password')
+    DB_uid=os.getenv('DB_uid')
+    DATABASE=os.getenv('DATABASE')
+    # DATABASE='KingzaTest'#測試DB
+    # 格式化日期格式為 YYYYMMDD
+    try:
+        conn = pyodbc.connect(
+                "DRIVER={ODBC Driver 17 for SQL Server};"
+                f"SERVER={DB_host};"  # 替換為完整的伺服器名稱
+                f"DATABASE={DATABASE};"
+                f"UID={DB_uid};"  # 使用 sa 作為使用者名稱
+                f"PWD={DB_password};"  # 替換為 sa 的密碼
+                "Trusted_Connection=no;" # 明確使用 SQL Server 認證
+                
+            )
+        cursor = conn.cursor()
+        sele_sql= f""" SELECT [MB003] FROM INVMB WHERE MB001 = ? """
+        cursor.execute(sele_sql, (productno,))
+        row = cursor.fetchone()
+        if row:
+            product_name = row[0] # 取得 MB003 的值
+            return True, product_name
+        else:
+            return False, ""
+        
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+    finally:
+        conn.close()
+
 # print(duplicate_FULL('20170309001','2025-12-31'))
